@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="board">
+
+    <sql id="includeProject">
+        WHERE CRDELETEFLAG='N'
+        <if test="searchKeyword!=null and searchKeyword!='' and searchType!=''">
+            <foreach item="item" index="index" collection="searchTypeArr" separator=" OR " open="AND (" close=")">
+                 ${item} LIKE CONCAT('%', #{searchKeyword},'%' )
+            </foreach>
+        </if>               
+    </sql>
+
+    <select id="selectProjectCount" resultType="Integer" parameterType="gu.common.SearchVO">
+        SELECT COUNT(*)
+          FROM PRJ_PROJECT TC
+         <include refid="includeProject"/>
+    </select> 
+    
+    <select id="selectProjectList" resultType="gu.project.ProjectVO" parameterType="gu.common.SearchVO">
+        SELECT CRNO, CRTITLE, TC.USERNO, USERNM, CRMEMO, DATE_FORMAT(CRDATE,'%Y-%m-%d') CRDATE
+          FROM PRJ_PROJECT TC
+         INNER JOIN COM_USER CU ON TC.USERNO=CU.USERNO
+         <include refid="includeProject"/>
+         ORDER BY CRNO DESC
+         <if test="rowStart != null">
+             LIMIT ${rowStart-1}, 10
+         </if>
+    </select> 
+        
+    <insert id="insertProject" parameterType="gu.project.ProjectVO" >
+        INSERT INTO PRJ_PROJECT(CRTITLE, USERNO, CRMEMO, CRDATE, CRDELETEFLAG)
+        VALUES (#{crtitle}, #{userno}, #{crmemo}, NOW(), 'N')
+    </insert>
+    
+    <update id="updateProject" parameterType="gu.project.ProjectVO">
+        UPDATE PRJ_PROJECT
+           SET CRTITLE=#{crtitle}, CRMEMO=#{crmemo}
+         WHERE CRNO=#{crno} 
+    </update> 
+        
+    <select id="selectProjectOne" parameterType="gu.project.ProjectVO" resultType="gu.project.ProjectVO">
+        SELECT CRNO, CRTITLE, TC.USERNO, USERNM, CRMEMO, DATE_FORMAT(CRDATE,'%Y-%m-%d') CRDATE
+          FROM PRJ_PROJECT TC
+         INNER JOIN COM_USER CU ON TC.USERNO=CU.USERNO
+         WHERE CRDELETEFLAG='N' AND CRNO=#{crno}
+    </select> 
+    
+    <delete id="deleteProject" parameterType="gu.project.ProjectVO">
+        UPDATE PRJ_PROJECT
+           SET CRDELETEFLAG='Y'
+         WHERE CRNO=#{crno} 
+    </delete> 
+    
+</mapper>
+
